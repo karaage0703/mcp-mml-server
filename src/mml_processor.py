@@ -7,7 +7,7 @@ MMLテキストの解析、MIDI変換、バリデーション機能を提供し�
 
 import re
 import io
-from typing import Tuple, Dict, Any, Optional
+from typing import Tuple
 from music21 import stream, note, duration, tempo, meter, key
 import mido
 

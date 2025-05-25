@@ -6,7 +6,6 @@ MML処理に関するMCPツールを提供します。
 """
 
 import os
-import tempfile
 from typing import Dict, Any
 from .mml_processor import MMLProcessor
 from .midi_player import MIDIPlayer
