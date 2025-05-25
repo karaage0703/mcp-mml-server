@@ -1,30 +1,41 @@
-# Python MCP Server Boilerplate
+# MML MCP Server
 
-Python MCP Server Boilerplateは、Model Context Protocol (MCP)に準拠したPythonサーバーを簡単に作成するためのテンプレートリポジトリです。
+MML（Music Macro Language）を処理するModel Context Protocol (MCP)サーバーです。
 
 ## 概要
 
-このプロジェクトは、MCPサーバーの基本的な実装を提供し、独自のツールを簡単に追加できるようにします。Model Context Protocol (MCP)は、LLMとサーバー間の通信プロトコルで、LLMに外部APIやサービスへのアクセス、リアルタイムデータの取得、アプリケーションやローカルシステムの制御などの機能を提供します。
+このプロジェクトは、MMLテキストの解析、MIDIファイルへの変換、MIDIデバイスでの演奏機能を提供するMCPサーバーです。LLMが音楽制作や演奏に関するタスクを実行できるようにします。
 
 ## 機能
 
-- **MCPサーバーの基本実装**
-  - JSON-RPC over stdioベースで動作
-  - ツールの登録と実行のためのメカニズム
-  - エラーハンドリングとロギング
+### MCPサーバー基本機能
+- JSON-RPC over stdioベースのMCPサーバー
+- MCP標準プロトコルに準拠したAPIエンドポイント
+- エラーハンドリングとロギング
 
-- **サンプルツール**
-  - システム情報を取得するツール
-  - 現在の日時を取得するツール
-  - エコーツール（入力されたテキストをそのまま返す）
+### MML処理機能
+- **MMLからMIDI変換**: MMLテキストをMIDIファイルに変換して保存
+- **MIDI演奏**: MIDIファイルをMIDIデバイスで演奏
+- **MML演奏**: MMLテキストを直接演奏（内部でMIDI変換）
+- **MML構文検証**: MML構文の正確性をチェック
+- **MIDIデバイス一覧**: 利用可能なMIDIデバイスの表示
 
-- **拡張性**
-  - 独自のツールを簡単に追加可能
-  - 外部モジュールからのツール登録をサポート
+### サンプルツール
+- `get_system_info`: システム情報を取得
+- `get_current_time`: 現在の日時を取得
+- `echo`: 入力されたテキストをそのまま返す
+
+## 必要な環境
+
+- Python 3.10以上
+- pip または uv
+- MIDIデバイス（演奏機能を使用する場合）
 
 ## インストール
 
 ### 依存関係のインストール
+
+#### uvを使用する場合（推奨）
 
 ```bash
 # uvがインストールされていない場合は先にインストール
@@ -34,7 +45,18 @@ Python MCP Server Boilerplateは、Model Context Protocol (MCP)に準拠したPy
 uv sync
 ```
 
-## 使い方
+#### pipを使用する場合
+
+```bash
+# リポジトリをクローン
+git clone <repository-url>
+cd mcp-mml-server
+
+# 依存関係をインストール
+pip install -e .
+```
+
+## 使用方法
 
 ### MCPサーバーの起動
 
@@ -47,7 +69,7 @@ uv run python -m src.main
 オプションを指定する場合：
 
 ```bash
-uv run python -m src.main --name "my-mcp-server" --version "1.0.0" --description "My MCP Server"
+uv run python -m src.main --name "mml-server" --version "1.0.0" --description "MML Processing Server"
 ```
 
 #### 通常のPythonを使用する場合
@@ -59,7 +81,7 @@ python -m src.main
 オプションを指定する場合：
 
 ```bash
-python -m src.main --name "my-mcp-server" --version "1.0.0" --description "My MCP Server"
+python -m src.main --name "mml-server" --version "1.0.0" --description "MML Processing Server"
 ```
 
 ### Cline/Cursorでの設定
@@ -67,12 +89,12 @@ python -m src.main --name "my-mcp-server" --version "1.0.0" --description "My MC
 Cline/CursorなどのAIツールでMCPサーバーを使用するには、`mcp_settings.json`ファイルに以下のような設定を追加します：
 
 ```json
-"my-mcp-server": {
+"mml-mcp-server": {
   "command": "uv",
   "args": [
     "run",
     "--directory",
-    "/path/to/mcp-server-python-boilerplate",
+    "/path/to/mcp-mml-server",
     "python",
     "-m",
     "src.main"
@@ -83,17 +105,164 @@ Cline/CursorなどのAIツールでMCPサーバーを使用するには、`mcp_s
 }
 ```
 
-`/path/to/mcp-server-python-boilerplate`は、このリポジトリのインストールディレクトリに置き換えてください。
+`/path/to/mcp-mml-server`は、このリポジトリのインストールディレクトリに置き換えてください。
 
-## 独自のツールの追加方法
+## MMLツール
 
-### 1. 直接ツールを追加する
+### 1. MMLからMIDI変換 (`mml_to_midi`)
 
-`src/example_tool.py`を参考に、独自のツールを実装します。
+MMLテキストをMIDIファイルに変換します。
+
+**パラメータ:**
+- `mml_text` (string): 変換するMMLテキスト
+- `output_path` (string): 出力MIDIファイルのパス
+
+**例:**
+```json
+{
+  "mml_text": "O4L4CDEFGAB",
+  "output_path": "output.mid"
+}
+```
+
+### 2. MIDI演奏 (`play_midi`)
+
+MIDIファイルをMIDIデバイスで演奏します。
+
+**パラメータ:**
+- `midi_path` (string): 演奏するMIDIファイルのパス
+- `device_name` (string, optional): 使用するMIDIデバイス名
+
+**例:**
+```json
+{
+  "midi_path": "music.mid",
+  "device_name": "MIDI Device"
+}
+```
+
+### 3. MML演奏 (`play_mml`)
+
+MMLテキストを直接演奏します。
+
+**パラメータ:**
+- `mml_text` (string): 演奏するMMLテキスト
+- `device_name` (string, optional): 使用するMIDIデバイス名
+
+**例:**
+```json
+{
+  "mml_text": "O4L4CDEFGAB>C",
+  "device_name": "MIDI Device"
+}
+```
+
+### 4. MML構文検証 (`validate_mml`)
+
+MML構文の正確性をチェックします。
+
+**パラメータ:**
+- `mml_text` (string): 検証するMMLテキスト
+
+**例:**
+```json
+{
+  "mml_text": "O4L4CDEFGAB"
+}
+```
+
+### 5. MIDIデバイス一覧 (`list_midi_devices`)
+
+利用可能なMIDIデバイスの一覧を取得します。
+
+**パラメータ:** なし
+
+## MML記法
+
+このサーバーでサポートされているMML記法：
+
+### 基本音符
+- `C`, `D`, `E`, `F`, `G`, `A`, `B`: ドレミファソラシ
+- `C#`, `D#`, `F#`, `G#`, `A#`: シャープ
+- `C-`, `D-`, `E-`, `G-`, `A-`, `B-`: フラット
+
+### 音長指定
+- `C4`: 4分音符のド
+- `C8`: 8分音符のド
+- `C2`: 2分音符のド
+- `C1`: 全音符のド
+- `C4.`: 付点4分音符のド
+
+### 休符
+- `R4`: 4分休符
+- `R8`: 8分休符
+
+### オクターブ
+- `O4`: オクターブを4に設定
+- `>`: オクターブを1つ上げる
+- `<`: オクターブを1つ下げる
+
+### その他
+- `L4`: デフォルト音長を4分音符に設定
+- `T120`: テンポを120BPMに設定
+
+### MMLの例
+
+```
+# 基本的なスケール
+O4L4CDEFGAB>C
+
+# テンポとオクターブを指定した楽曲
+T120O5L8CDEFGAB>C2
+
+# 付点音符と休符を含む楽曲
+O4L4C.D8EFG2R4AB>C
+
+# シャープ・フラットを含む楽曲
+O4L4CC#DD-EFF#GG#AA-B>C
+```
+
+## 開発
+
+### テストの実行
+
+```bash
+# uvを使用する場合
+uv run pytest
+
+# pipを使用する場合
+pytest
+```
+
+### 開発用依存関係のインストール
+
+```bash
+pip install -e ".[dev]"
+```
+
+### カスタムツールの追加
+
+独自のツールを追加するには、以下の手順に従ってください：
+
+1. ツール関数を作成
+2. `register_tools`関数でツールを登録
+3. メイン関数で登録関数を呼び出し
+
+**例:**
 
 ```python
+def my_custom_tool(params):
+    # ツールの処理
+    return {
+        "content": [
+            {
+                "type": "text",
+                "text": "結果",
+            }
+        ]
+    }
+
 def register_my_tools(server):
-    # ツールの登録
     server.register_tool(
         name="my_tool",
         description="My custom tool",
@@ -107,172 +276,58 @@ def register_my_tools(server):
             },
             "required": ["param1"],
         },
-        handler=my_tool_handler,
+        handler=my_custom_tool,
     )
-
-def my_tool_handler(params):
-    # ツールの実装
-    param1 = params.get("param1", "")
-
-    # 処理を実装
-    result = f"Processed: {param1}"
-
-    return {
-        "content": [
-            {
-                "type": "text",
-                "text": result,
-            }
-        ]
-    }
 ```
 
-`src/main.py`に以下のコードを追加して、ツールを登録します：
+## トラブルシューティング
 
-```python
-from .my_tools import register_my_tools
+### MIDIデバイスが見つからない場合
 
-# MCPサーバーの作成
-server = MCPServer()
+1. システムにMIDIデバイスが接続されているか確認
+2. `list_midi_devices`ツールで利用可能なデバイスを確認
+3. 仮想MIDIポートの使用を検討
 
-# サンプルツールの登録
-register_example_tools(server)
+### MML構文エラーの場合
 
-# 独自のツールの登録
-register_my_tools(server)
-```
+1. `validate_mml`ツールで構文をチェック
+2. サポートされているMML記法を確認
+3. 不正な文字や記号が含まれていないか確認
 
-### 2. 外部モジュールとして追加する
+### 依存関係のエラーの場合
 
-別のPythonモジュールにツールを実装し、コマンドライン引数で指定することもできます：
+MIDIライブラリの依存関係でエラーが発生する場合：
 
+**macOS:**
 ```bash
-python -m src.main --module myapp.tools
+# Core MIDIが必要
+# 通常は自動的にインストールされています
 ```
 
-この場合、`myapp/tools.py`には以下のような関数を実装します：
-
-```python
-def register_tools(server):
-    # ツールの登録
-    server.register_tool(...)
+**Linux:**
+```bash
+# ALSA開発ライブラリが必要
+sudo apt-get install libasound2-dev
+# または
+sudo yum install alsa-lib-devel
 ```
 
-## MCPツールの使用方法
-
-### get_system_info
-
-システム情報を取得します。
-
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "get_system_info",
-  "params": {},
-  "id": 1
-}
-```
-
-### get_current_time
-
-現在の日時を取得します。
-
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "get_current_time",
-  "params": {
-    "format": "%Y-%m-%d %H:%M:%S"
-  },
-  "id": 2
-}
-```
-
-### echo
-
-入力されたテキストをそのまま返します。
-
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "echo",
-  "params": {
-    "text": "Hello, MCP!"
-  },
-  "id": 3
-}
-```
-
-## MCPサーバーの開発ガイド
-
-### 1. ツールの設計
-
-ツールを設計する際は、以下の点を考慮してください：
-
-- ツールの目的と機能を明確にする
-- 入力パラメータとその型を定義する
-- 出力フォーマットを決定する
-- エラーケースを考慮する
-
-### 2. ツールの実装
-
-ツールを実装する際は、以下のパターンに従ってください：
-
-```python
-def my_tool_handler(params):
-    try:
-        # パラメータの取得と検証
-        param1 = params.get("param1")
-        if not param1:
-            raise ValueError("param1 is required")
-
-        # 処理の実装
-        result = process_data(param1)
-
-        # 結果の返却
-        return {
-            "content": [
-                {
-                    "type": "text",
-                    "text": result,
-                }
-            ]
-        }
-    except Exception as e:
-        # エラーハンドリング
-        return {
-            "content": [
-                {
-                    "type": "text",
-                    "text": f"Error: {str(e)}",
-                }
-            ],
-            "isError": True,
-        }
-```
-
-### 3. ツールの登録
-
-ツールを登録する際は、以下のパターンに従ってください：
-
-```python
-server.register_tool(
-    name="my_tool",                # ツール名
-    description="My custom tool",  # ツールの説明
-    input_schema={                 # 入力スキーマ
-        "type": "object",
-        "properties": {
-            "param1": {
-                "type": "string",
-                "description": "Parameter 1",
-            },
-        },
-        "required": ["param1"],
-    },
-    handler=my_tool_handler,       # ハンドラ関数
-)
+**Windows:**
+```bash
+# Windows MIDIが必要
+# 通常は自動的に利用可能です
 ```
 
 ## ライセンス
 
-このプロジェクトはMITライセンスの下で公開されています。詳細は[LICENSE](LICENSE)ファイルを参照してください。
+MIT License
+
+## 貢献
+
+プルリクエストやイシューの報告を歓迎します。
+
+## 関連リンク
+
+- [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
+- [Music21 Documentation](https://web.mit.edu/music21/)
+- [MIDO Documentation](https://mido.readthedocs.io/)

@@ -4,12 +4,12 @@
 ## 1. 要件定義
 
 ### 1.1 基本情報
-- ソフトウェア名称: Python MCP Server Boilerplate
-- リポジトリ名: mcp-server-python-boilerplate
+- ソフトウェア名称: MML MCP Server
+- リポジトリ名: mcp-mml-server
 
 ### 1.2 プロジェクト概要
 
-本プロジェクトは、Model Context Protocol (MCP)に準拠したPythonサーバーを簡単に作成するためのテンプレートリポジトリを提供することを目的とする。MCPは、LLMとサーバー間の通信プロトコルで、LLMに外部APIやサービスへのアクセス、リアルタイムデータの取得、アプリケーションやローカルシステムの制御などの機能を提供する。
+本プロジェクトは、MML（Music Macro Language）を処理するModel Context Protocol (MCP)サーバーを提供する。MMLからMIDIファイルへの変換、MIDIデバイスでの演奏、MMLの直接演奏機能を提供し、LLMが音楽制作や演奏に関するタスクを実行できるようにする。
 
 ### 1.3 機能要件
 
@@ -25,12 +25,19 @@
 - ツールの登録と実行のためのメカニズム
 - エラーハンドリングとロギング
 
-#### 1.3.2 サンプルツール
+#### 1.3.2 MML処理ツール
+- **MMLからMIDI変換ツール**: MMLテキストを入力としてMIDIファイルに変換して保存
+- **MIDI演奏ツール**: MIDIファイルをMIDIデバイスで演奏
+- **MML演奏ツール**: MMLテキストを直接演奏（内部でMIDI変換して演奏）
+- **MMLバリデーションツール**: MML構文の検証
+- **利用可能MIDIデバイス一覧ツール**: システムで利用可能なMIDIデバイスの一覧取得
+
+#### 1.3.3 サンプルツール（既存）
 - システム情報を取得するツール
 - 現在の日時を取得するツール
 - エコーツール（入力されたテキストをそのまま返す）
 
-#### 1.3.3 拡張性
+#### 1.3.4 拡張性
 - 独自のツールを簡単に追加可能
 - 外部モジュールからのツール登録をサポート
 
@@ -39,11 +46,13 @@
 - 迅速なレスポンス
 - シンプルな構成とメンテナンス性重視
 - 拡張性の高い設計
+- リアルタイム音楽演奏のための低レイテンシ
 
 ### 1.5 制約条件
 
 - Python 3.10以上で動作
 - JSON-RPC over stdioベースで動作
+- MIDIデバイスが利用可能な環境
 
 ### 1.6 開発環境
 
@@ -51,11 +60,14 @@
 - 外部ライブラリ:
   - `mcp[cli]` (Model Context Protocol)
   - `python-dotenv`
+  - `mido` (MIDI処理)
+  - `python-rtmidi` (リアルタイムMIDI)
+  - `music21` (音楽理論・MML解析)
 
 ### 1.7 成果物
 
-- Python製MCPサーバーテンプレート
-- サンプルツール実装
+- MML処理機能を持つMCPサーバー
+- MMLツール実装
 - README / 利用手順
 - 設計書
 
@@ -103,6 +115,34 @@ def get_current_time(params: Dict[str, Any]) -> Dict[str, Any]
 def echo(params: Dict[str, Any]) -> Dict[str, Any]
 ```
 
+##### MMLツール関数
+```python
+def mml_to_midi(params: Dict[str, Any]) -> Dict[str, Any]
+def play_midi(params: Dict[str, Any]) -> Dict[str, Any]
+def play_mml(params: Dict[str, Any]) -> Dict[str, Any]
+def validate_mml(params: Dict[str, Any]) -> Dict[str, Any]
+def list_midi_devices(params: Dict[str, Any]) -> Dict[str, Any]
+```
+
+##### `MMLProcessor`
+```python
+class MMLProcessor:
+    def parse_mml(mml_text: str) -> music21.stream.Stream
+    def mml_to_midi_data(mml_text: str) -> bytes
+    def save_midi_file(midi_data: bytes, filepath: str) -> None
+    def validate_mml_syntax(mml_text: str) -> Tuple[bool, str]
+```
+
+##### `MIDIPlayer`
+```python
+class MIDIPlayer:
+    def __init__(device_name: Optional[str] = None)
+    def get_available_devices() -> List[str]
+    def play_midi_file(filepath: str) -> None
+    def play_midi_data(midi_data: bytes) -> None
+    def stop() -> None
+```
+
 ### 2.3 インターフェース設計
 
 #### 2.3.1 MCP標準エンドポイント
@@ -114,9 +154,18 @@ def echo(params: Dict[str, Any]) -> Dict[str, Any]
 - `resources/templates/list`: リソーステンプレートの一覧取得
 
 #### 2.3.2 カスタムツールエンドポイント
+
+##### 既存ツール
 - `get_system_info`: システム情報を取得
 - `get_current_time`: 現在の日時を取得
 - `echo`: 入力されたテキストをそのまま返す
+
+##### MMLツール
+- `mml_to_midi`: MMLテキストをMIDIファイルに変換
+- `play_midi`: MIDIファイルを演奏
+- `play_mml`: MMLテキストを直接演奏
+- `validate_mml`: MML構文を検証
+- `list_midi_devices`: 利用可能なMIDIデバイス一覧を取得
 
 ### 2.4 セキュリティ設計
 

@@ -3,11 +3,11 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "mcp-server-python-boilerplate"
+name = "mcp-mml-server"
 version = "0.1.0"
-description = "Python MCP Server Boilerplate - Model Context Protocol (MCP)に準拠したPythonサーバーを簡単に作成するためのテンプレート"
+description = "MML MCP Server - MML（Music Macro Language）を処理するModel Context Protocol (MCP)サーバー"
 authors = [
-    {name = "MCP Server Team"}
+    {name = "MCP MML Server Team"}
 ]
 readme = "README.md"
 requires-python = ">=3.10"
@@ -18,10 +18,14 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Topic :: Software Development :: Libraries :: Application Frameworks",
     "Topic :: Communications :: Chat",
+    "Topic :: Multimedia :: Sound/Audio :: MIDI",
 ]
 dependencies = [
     "mcp[cli]",
     "python-dotenv",
+    "mido",
+    "python-rtmidi",
+    "music21",
 ]
 
 [project.optional-dependencies]
@@ -30,7 +34,7 @@ dev = [
 ]
 
 [project.scripts]
-mcp-server-python = "main:main"
+mcp-mml-server = "main:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

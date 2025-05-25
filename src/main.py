@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 
 from .mcp_server import MCPServer
 from .example_tool import register_example_tools
+from .mml_tools import register_mml_tools
 
 
 def main():
@@ -24,9 +25,9 @@ def main():
     parser = argparse.ArgumentParser(
         description="Python MCP Server - Model Context Protocol (MCP)に準拠したPythonサーバーのボイラープレート"
     )
-    parser.add_argument("--name", default="mcp-server-python", help="サーバー名")
+    parser.add_argument("--name", default="mcp-mml-server", help="サーバー名")
     parser.add_argument("--version", default="0.1.0", help="サーバーバージョン")
-    parser.add_argument("--description", default="Python MCP Server", help="サーバーの説明")
+    parser.add_argument("--description", default="MML MCP Server - MML処理機能を提供するMCPサーバー", help="サーバーの説明")
     parser.add_argument("--module", help="追加のツールモジュール（例: myapp.tools）")
     args = parser.parse_args()
 
@@ -39,6 +40,9 @@ def main():
 
         # サンプルツールの登録
         register_example_tools(server)
+
+        # MMLツールの登録
+        register_mml_tools(server)
 
         # 追加のツールモジュールがある場合は読み込む
         if args.module:
