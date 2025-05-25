@@ -20,11 +20,6 @@ MML（Music Macro Language）を処理するModel Context Protocol (MCP)サー�
 - **MML構文検証**: MML構文の正確性をチェック
 - **MIDIデバイス一覧**: 利用可能なMIDIデバイスの表示
 
-### サンプルツール
-- `get_system_info`: システム情報を取得
-- `get_current_time`: 現在の日時を取得
-- `echo`: 入力されたテキストをそのまま返す
-
 ## 必要な環境
 
 - Python 3.10以上
@@ -39,7 +34,7 @@ MML（Music Macro Language）を処理するModel Context Protocol (MCP)サー�
 
 ```bash
 # uvがインストールされていない場合は先にインストール
-# pip install uv
+# curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # 依存関係のインストール
 uv sync
