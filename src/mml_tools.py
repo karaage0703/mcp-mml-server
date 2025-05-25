@@ -84,6 +84,44 @@ def register_mml_tools(server) -> None:
         handler=list_midi_devices,
     )
 
+    # マルチトラックMML to MIDI変換ツール
+    server.register_tool(
+        name="mml_multitrack_to_midi",
+        description="複数のMMLテキストをマルチトラックMIDIファイルに変換して保存します",
+        input_schema={
+            "type": "object",
+            "properties": {
+                "track_mml_list": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "各トラックのMMLテキストのリスト（例: ['CDEFGAB', 'EGBEGB']）",
+                },
+                "output_path": {"type": "string", "description": "出力MIDIファイルのパス（例: 'multitrack.mid'）"},
+            },
+            "required": ["track_mml_list", "output_path"],
+        },
+        handler=mml_multitrack_to_midi,
+    )
+
+    # マルチトラックMML演奏ツール
+    server.register_tool(
+        name="play_mml_multitrack",
+        description="複数のMMLテキストをマルチトラックで直接演奏します",
+        input_schema={
+            "type": "object",
+            "properties": {
+                "track_mml_list": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "各トラックのMMLテキストのリスト（例: ['CDEFGAB', 'EGBEGB']）",
+                },
+                "device_name": {"type": "string", "description": "使用するMIDIデバイス名（省略時はデフォルトデバイス）"},
+            },
+            "required": ["track_mml_list"],
+        },
+        handler=play_mml_multitrack,
+    )
+
 
 def mml_to_midi(params: Dict[str, Any]) -> Dict[str, Any]:
     """MMLテキストをMIDIファイルに変換します。
@@ -150,9 +188,6 @@ def play_midi(params: Dict[str, Any]) -> Dict[str, Any]:
 
         if not midi_path:
             raise ValueError("midi_pathパラメータが必要です")
-
-        if not os.path.exists(midi_path):
-            raise FileNotFoundError(f"MIDIファイルが見つかりません: {midi_path}")
 
         # MIDIプレイヤーを作成
         player = MIDIPlayer(device_name=device_name)
@@ -292,3 +327,116 @@ def list_midi_devices(params: Dict[str, Any]) -> Dict[str, Any]:
 
     except Exception as e:
         return {"content": [{"type": "text", "text": f"MIDIデバイス一覧取得エラー: {str(e)}"}], "isError": True}
+
+
+def mml_multitrack_to_midi(params: Dict[str, Any]) -> Dict[str, Any]:
+    """複数のMMLテキストをマルチトラックMIDIファイルに変換します。
+
+    Args:
+        params (Dict[str, Any]): パラメータ辞書
+            - track_mml_list (list): MMLテキストのリスト
+            - output_path (str): 出力ファイルパス
+
+    Returns:
+        Dict[str, Any]: 実行結果
+    """
+    try:
+        track_mml_list = params.get("track_mml_list")
+        output_path = params.get("output_path")
+
+        if not track_mml_list:
+            raise ValueError("track_mml_listパラメータが必要です")
+        if not output_path:
+            raise ValueError("output_pathパラメータが必要です")
+        if not isinstance(track_mml_list, list):
+            raise ValueError("track_mml_listはリストである必要があります")
+
+        # MMLプロセッサを作成
+        processor = MMLProcessor()
+
+        # マルチトラックMMLをMIDIデータに変換
+        midi_data = processor.mml_multitrack_to_midi_data(track_mml_list)
+
+        # ファイルに保存
+        processor.save_midi_file(midi_data, output_path)
+
+        # ファイルサイズを取得
+        file_size = os.path.getsize(output_path)
+
+        # トラック情報を作成
+        track_info = "\n".join(
+            [f"トラック{i + 1}: {mml[:50]}{'...' if len(mml) > 50 else ''}" for i, mml in enumerate(track_mml_list)]
+        )
+
+        return {
+            "content": [
+                {
+                    "type": "text",
+                    "text": f"マルチトラックMMLをMIDIファイルに変換しました。\n"
+                    f"トラック数: {len(track_mml_list)}\n"
+                    f"{track_info}\n"
+                    f"出力ファイル: {output_path}\n"
+                    f"ファイルサイズ: {file_size} bytes",
+                }
+            ]
+        }
+
+    except Exception as e:
+        return {"content": [{"type": "text", "text": f"マルチトラックMML to MIDI変換エラー: {str(e)}"}], "isError": True}
+
+
+def play_mml_multitrack(params: Dict[str, Any]) -> Dict[str, Any]:
+    """複数のMMLテキストをマルチトラックで直接演奏します。
+
+    Args:
+        params (Dict[str, Any]): パラメータ辞書
+            - track_mml_list (list): MMLテキストのリスト
+            - device_name (str, optional): MIDIデバイス名
+
+    Returns:
+        Dict[str, Any]: 実行結果
+    """
+    try:
+        track_mml_list = params.get("track_mml_list")
+        device_name = params.get("device_name")
+
+        if not track_mml_list:
+            raise ValueError("track_mml_listパラメータが必要です")
+        if not isinstance(track_mml_list, list):
+            raise ValueError("track_mml_listはリストである必要があります")
+
+        # MMLプロセッサを作成
+        processor = MMLProcessor()
+
+        # マルチトラックMMLをMIDIデータに変換
+        midi_data = processor.mml_multitrack_to_midi_data(track_mml_list)
+
+        # MIDIプレイヤーを作成
+        player = MIDIPlayer(device_name=device_name)
+
+        # MIDIデータを演奏
+        player.play_midi_data(midi_data)
+
+        # デバイス情報を取得
+        device_info = player.get_device_info()
+
+        # トラック情報を作成
+        track_info = "\n".join(
+            [f"トラック{i + 1}: {mml[:50]}{'...' if len(mml) > 50 else ''}" for i, mml in enumerate(track_mml_list)]
+        )
+
+        return {
+            "content": [
+                {
+                    "type": "text",
+                    "text": f"マルチトラックMMLの演奏を開始しました。\n"
+                    f"トラック数: {len(track_mml_list)}\n"
+                    f"{track_info}\n"
+                    f"使用デバイス: {device_info['current_device']}\n"
+                    f"演奏状態: {'演奏中' if device_info['is_playing'] else '停止中'}",
+                }
+            ]
+        }
+
+    except Exception as e:
+        return {"content": [{"type": "text", "text": f"マルチトラックMML演奏エラー: {str(e)}"}], "isError": True}

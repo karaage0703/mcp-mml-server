@@ -249,6 +249,85 @@ class MMLProcessor:
         except Exception as e:
             raise ValueError(f"MIDI変換エラー: {str(e)}")
 
+    def mml_multitrack_to_midi_data(self, track_mml_list: list) -> bytes:
+        """複数のMMLテキストをマルチトラックMIDIデータに変換します。
+
+        Args:
+            track_mml_list (list): MMLテキストのリスト（各要素が1トラック）
+
+        Returns:
+            bytes: マルチトラックMIDIデータ
+
+        Raises:
+            ValueError: MML構文エラーの場合
+        """
+        try:
+            # MIDIファイルを作成
+            midi_file = mido.MidiFile()
+            ticks_per_beat = midi_file.ticks_per_beat
+
+            for track_index, mml_text in enumerate(track_mml_list):
+                # 各MMLを解析
+                score = self.parse_mml(mml_text)
+
+                # 新しいトラックを作成
+                track = mido.MidiTrack()
+                midi_file.tracks.append(track)
+
+                # トラック名を設定
+                track.append(mido.MetaMessage("track_name", name=f"Track {track_index + 1}", time=0))
+
+                # MIDIチャンネルを設定（最大16チャンネル）
+                channel = track_index % 16
+
+                current_time = 0
+
+                for element in score:
+                    if isinstance(element, note.Note):
+                        # 音符の処理
+                        midi_note = element.pitch.midi
+                        velocity = 64  # デフォルトベロシティ
+
+                        # 音符の長さをティックに変換
+                        duration_ticks = int(element.duration.quarterLength * ticks_per_beat)
+
+                        # Note On
+                        track.append(
+                            mido.Message("note_on", channel=channel, note=midi_note, velocity=velocity, time=current_time)
+                        )
+
+                        # Note Off
+                        track.append(
+                            mido.Message("note_off", channel=channel, note=midi_note, velocity=velocity, time=duration_ticks)
+                        )
+
+                        current_time = 0
+
+                    elif isinstance(element, note.Rest):
+                        # 休符の処理
+                        duration_ticks = int(element.duration.quarterLength * ticks_per_beat)
+                        current_time += duration_ticks
+
+                    elif isinstance(element, tempo.TempoIndication):
+                        # テンポ変更（最初のトラックのみ）
+                        if track_index == 0:
+                            bpm = (
+                                element.numberSounding
+                                if hasattr(element, "numberSounding")
+                                else getattr(element, "number", 120)
+                            )
+                            microseconds_per_beat = int(60000000 / bpm)
+                            track.append(mido.MetaMessage("set_tempo", tempo=microseconds_per_beat, time=current_time))
+                            current_time = 0
+
+            # MIDIデータをバイト列として取得
+            midi_bytes = io.BytesIO()
+            midi_file.save(file=midi_bytes)
+            return midi_bytes.getvalue()
+
+        except Exception as e:
+            raise ValueError(f"マルチトラックMIDI変換エラー: {str(e)}")
+
     def save_midi_file(self, midi_data: bytes, filepath: str) -> None:
         """MIDIデータをファイルに保存します。
 

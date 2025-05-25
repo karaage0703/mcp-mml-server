@@ -11,7 +11,6 @@ import importlib
 from dotenv import load_dotenv
 
 from .mcp_server import MCPServer
-from .example_tool import register_example_tools
 from .mml_tools import register_mml_tools
 
 
@@ -37,9 +36,6 @@ def main():
     try:
         # MCPサーバーの作成
         server = MCPServer()
-
-        # サンプルツールの登録
-        register_example_tools(server)
 
         # MMLツールの登録
         register_mml_tools(server)
